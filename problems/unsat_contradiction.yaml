@@ -1,0 +1,8 @@
+result: "(and (= x (+ a 2))"
+inputs: {a : int}
+outputs: {x: int}
+samples:
+  - {a: 1, x: 3}
+  - {a: 1, x: 4} # should be a function!
+depth: 3
+width: 3

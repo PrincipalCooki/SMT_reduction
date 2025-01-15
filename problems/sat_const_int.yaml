@@ -1,0 +1,13 @@
+depth: 1
+width: 1
+inputs:
+  n: int
+outputs:
+  f: int
+samples:
+- n: 1
+  f: 1
+- n: 2
+  f: 1
+result: (= f (ite (= n 0) 0 (/ n n)))
+

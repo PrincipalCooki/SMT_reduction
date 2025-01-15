@@ -1,0 +1,15 @@
+depth: 3
+width: 3
+inputs:
+  a: int
+outputs:
+  y: int
+samples:
+- a: 1
+  y: -1
+- a: 2
+  y: -2
+- a: 3
+  y: -3
+result: (= y (* a (- (- a a) (/ a a))))
+

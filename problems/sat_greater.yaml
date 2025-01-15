@@ -1,0 +1,32 @@
+depth: 2
+inputs:
+  a: int
+outputs:
+  x: bool
+result: (and (= x (> a 10)))
+samples:
+- a: -30
+  x: false
+- a: 37
+  x: true
+- a: -16
+  x: false
+- a: -56
+  x: false
+- a: -91
+  x: false
+- a: 57
+  x: true
+- a: -51
+  x: false
+- a: -51
+  x: false
+- a: 13
+  x: true
+- a: -53
+  x: false
+- a: 48
+  x: true
+- a: -71
+  x: false
+width: 2

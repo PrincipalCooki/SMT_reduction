@@ -1,0 +1,24 @@
+depth: 2
+width: 3
+inputs:
+  a: int
+  b: int
+outputs:
+  m: int
+samples:
+- a: 1
+  b: 1
+  m: 0
+- a: 2
+  b: 2
+  m: 0
+- a: 3
+  b: 3
+  m: 0
+- a: 4
+  b: 2
+  m: 0
+- a: 5
+  b: 2
+  m: 1
+

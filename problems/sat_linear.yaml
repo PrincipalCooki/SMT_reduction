@@ -1,0 +1,35 @@
+depth: 2
+width: 2
+inputs:
+  b: int
+  m: int
+  x: int
+outputs:
+  y: int
+result: (and (= y (+ (* x m) b)))
+samples:
+- b: 82
+  m: -21
+  x: 99
+  y: -1997
+- b: 37
+  m: 52
+  x: -17
+  y: -847
+- b: 91
+  m: -40
+  x: 15
+  y: -509
+- b: -100
+  m: 91
+  x: -26
+  y: -2466
+- b: 16
+  m: -47
+  x: -73
+  y: 3447
+- b: 41
+  m: -65
+  x: -57
+  y: 3746
+

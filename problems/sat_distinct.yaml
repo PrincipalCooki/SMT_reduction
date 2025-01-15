@@ -1,0 +1,30 @@
+depth: 2
+inputs:
+  a: int
+  b: int
+  c: int
+outputs:
+  x: bool
+  y: int
+  z: int
+result: (and (= x (distinct a b c)) (= y a) (= z b))
+samples:
+- a: 73
+  b: -50
+  c: -44
+  x: true
+  y: 73
+  z: -50
+- a: -48
+  b: 10
+  c: 66
+  x: true
+  y: -48
+  z: 10
+- a: -71
+  b: 44
+  c: 17
+  x: true
+  y: -71
+  z: 44
+width: 3

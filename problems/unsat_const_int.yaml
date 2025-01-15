@@ -1,0 +1,10 @@
+depth: 1
+width: 1
+inputs:
+  n: int
+outputs:
+  f: int
+samples:
+- n: 0
+  f: 1
+
