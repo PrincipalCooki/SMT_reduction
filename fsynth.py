@@ -6,10 +6,8 @@ import yaml
 from typing import Dict, List
 from z3 import *
 
-print("Hello, World!")
-
 # Read the specification given via stdin
-# Original code: spec = yaml.safe_load(sys.stdin)
+# spec = yaml.safe_load(sys.stdin)
 #Mein code:
 
 yaml_file_path = "problems/sat_const_bool.yaml"
@@ -25,7 +23,6 @@ except yaml.YAMLError as e:
     print(f"Fehler beim Laden der YAML-Datei: {e}", file=sys.stderr)
     sys.exit(1)
 
-
 inputs: Dict[str, str] = spec['inputs']
 outputs: Dict[str, str] = spec['outputs']
 samples: List[Dict[str, str]] = spec['samples']
@@ -34,12 +31,6 @@ width = int(spec['width'])
 
 output_printer = NetworkPrinter(depth, width, outputs)
 
-print("Inputs:", inputs)
-print("Outputs:", outputs)  
-print("Samples:", samples)
-print("Depth:", depth)
-print("Width:", width)
-
 s = Solver()
 
 # TODO Encode the given specification into SMT constraints
@@ -47,24 +38,21 @@ s = Solver()
 def div0(a, b):
     return If(b == 0, 0, a / b)
 
-
-# '+', '-', '*', '/', '<', '==', 'and', 'or', 'not', 'id'
-#  0 ,  1 ,  2 ,  3 ,  4 ,  5  ,   6  ,  7  ,   8  ,  9  
+# '+', '-', '*', '/', 'id  '<', '==', 'and', 'or', 'not', 'id'
+#  0 ,  1 ,  2 ,  3 ,  4 ,  5 ,   6  ,  7  ,   8  ,  9  , 10
 # optype = True: optype is int, otherwise bool 
-def apply_op(op, optype, a, b):
+def apply_op(op, a, b):
     
     return If(op == 0, a + b, 
                 If(op == 1, a - b,  
                 If(op == 2, a * b,  
                 If(op == 3, div0(a, b),  
-                If(op == 4, a < b,  
-                If(op == 5, a == b,  
-                If(op == 6, a*b,  # And
-                If(op == 7, (a+b) - (a*b), # Or
-                If(op == 8, 1 - a, a))))))))) # Not
-                
-
-
+                If(op == 4, a ,   
+                If(op == 5, a < b,  
+                If(op == 6, a == b,  
+                If(op == 7, a*b,  # And
+                If(op == 8, (a+b) - (a*b), # Or
+                If(op == 9, 1 - a, a)))))))))) # Not            
 
 
 def initialize_layers():
@@ -74,9 +62,9 @@ def initialize_layers():
         for w in range(width):
             op = Int(f'op_{d}_{w}')
             optype = Bool(f'optype_{d}_{w}')
-            s.add(And(op >= 0, op <= 9)) 
+            s.add(And(op >= 0, op <= 10)) 
             # optype is the type of the output, True means Int output
-            s.add(optype == If(op <= 3, True, False)) # TODO identity does not work 
+            s.add(optype == If(op <= 4, True, False)) # TODO identity does not work 
             in_0 = Int(f'in0_{d}_{w}')
             in_1 = Int(f'in1_{d}_{w}')
             out = Int(f'out_{d}_{w}')
@@ -88,7 +76,6 @@ def initialize_layers():
         layers.append(layer)
 
     return layers
-
 
 # Geniale funktion!!!! frfr
 # da alle einträge außer der ausgewählten 0 sind, regelt die summe den rest
@@ -104,7 +91,6 @@ def select_value_bool(input_values, index):
     s.add(index < n)
     s.add(index >= 0)
     return Or([And(index == i, input_values[i]) for i in range(n)])
-
  
 layers = initialize_layers()
 
@@ -115,17 +101,12 @@ input_vars = {name: Int(name) for name, dtype in inputs.items()}
 output_vars = {name: Int(name) for name, dtype in outputs.items()}
 # input_vars = {name: Int(name) if dtype == 'int' else Bool(name) for name, dtype in inputs.items()}
 # output_vars = {name: Int(name) if dtype == 'int' else Bool(name) for name, dtype in outputs.items()}
-print("input varts: ", input_vars)
-
-
-
+# print("input varts: ", input_vars)
 
 # Connect inputs to the first layer
 for w, (op, optype, in_0, in_1, values) in enumerate(layers[0]):
     s.add(Or([in_0 == i for i in range(len(input_vars))])) 
     s.add(Or([in_1 == i for i in range(len(input_vars))]))
-
-
 
 
 for d in range(len(layers)):
@@ -136,17 +117,26 @@ for d in range(len(layers)):
 
             if d == 0:
                 input_values = []
-                for name in input_vars:
+                for input_vars_index, name in enumerate(input_vars):
                     input_values.append(sample[name])
-                
+                    # falls intput int ist wähle eine inputtype int operation aus
 
+                    if inputs[name] == 'int':
+                        s.add(If(in_0 == input_vars_index, op <= 6, True))
+                        s.add(If(in_1 == input_vars_index, op <= 6, True))
+                    else:
+                        s.add(If(in_0 == input_vars_index, op > 6, True))
+                        s.add(If(in_1 == input_vars_index, op > 6, True))
             else:
                 input_values = []
-                for prev_block in layers[d - 1]:
+                for block_index, prev_block in enumerate(layers[d - 1]):
                     (op_prev, optype_prev, in_0_prev, in_1_prev, values_prev) = prev_block
                     input_values.append(values_prev[i])
 
-            s.add(values[i] == apply_op(op, optype, select_value(input_values, in_0), select_value(input_values, in_1)))
+                    s.add(If(in_0 == block_index, If(optype_prev, op <= 6, op > 6), True))
+                    s.add(If(in_1 == block_index, If(optype_prev, op <= 6, op > 6), True))
+
+            s.add(values[i] == apply_op(op, select_value(input_values, in_0), select_value(input_values, in_1)))
 
 
 # add constraints to output
@@ -169,49 +159,33 @@ for i, sample in enumerate(samples):
         else:
             s.add(Not(select_value_bool(last_optypes, output_index)))
         
-print("yoo what")
-
+# print(s.to_smt2())
 ans = s.check()
 
-# print(s.to_smt2())
-
-
-
-op_sign = ['+', '-', '*', '/', '<', '=', 'and', 'or', 'not', 'id']
+op_sign = ['+', '-', '*', '/', 'id', '<', '=', 'and', 'or', 'not', 'id']
 
 if ans == sat:
-    print("YEAHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH")
     # There exists a model => function is realizable
     model = s.model()
     output_printer.set_realizable(True)
     # TODO synthesize the function given the SMT model
 
-    print("Model:")
-    print(model)
-
-    print(model[op])
-    ind = model[op].as_long()
-    print(op_sign[ind])
-
     for w, (op, optype, in_0, in_1, values) in enumerate(layers[0]):
-        name0 = next((name for i, name in enumerate(input_vars) if i == in_0), "")
-        name1 = next((name for i, name in enumerate(input_vars) if i == in_1), "")
+        name0 = next((name for i, name in enumerate(input_vars) if i == model[in_0].as_long()), "")
+        name1 = next((name for i, name in enumerate(input_vars) if i == model[in_1].as_long()), "")
         
         node = NetworkNode(op_sign[model[op].as_long()], name0, name1)
         output_printer.set_node(0, w, node)
 
-    for d, layer in enumerate(layers[1:-1]):
+    for d, layer in enumerate(layers[1:], start = 1):
         for w, (op, optype, in_0, in_1, values) in enumerate(layer):
-            node = NetworkNode(op_sign[model[op].as_long()], in_0, in_1)
+            node = NetworkNode(op_sign[model[op].as_long()],  model[in_0].as_long(),  model[in_1].as_long())
             output_printer.set_node(d, w, node)
 
-    for w, (op, optype, in_0, in_1, values) in enumerate(layers[-1]):
-
-        for i, name in enumerate(output_vars):
-            print("name: ", name)
-            output_index = Int(f'output_index_{name}')
-            output_printer.set_output(name, output_index)
-
+    for i, name in enumerate(output_vars):
+        output_index = Int(f'output_index_{name}')
+        model_output_index = model[output_index].as_long()
+        output_printer.set_output(name, model_output_index)
 
     # output_printer.set_output("f", 0)
 
@@ -225,5 +199,3 @@ else:
     output_printer.set_realizable(False)
 
 output_printer.print()
-
-

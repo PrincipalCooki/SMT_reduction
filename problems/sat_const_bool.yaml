@@ -5,25 +5,10 @@ inputs:
 outputs:
   f: bool
 samples:
-
-- n: 20
+- n: 0
   f: True
-
+- n: 1
+  f: True
+- n: 2
+  f: True
 result: (= f (= n n))
-
-
-
-# depth: 1
-# width: 1
-# inputs:
-#   n: int
-# outputs:
-#   f: bool
-# samples:
-# - n: 0
-#   f: True
-# - n: 1
-#   f: True
-# - n: 2
-#   f: True
-# result: (= f (= n n))
